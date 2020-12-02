@@ -61,6 +61,7 @@ face <- read.csv("US-FB.csv")
 There is much global discussion surrounding the true impact of COVID-19. This report analyses the early impacts of the pandemic, particularly those affecting retail and hospitality sectors, and their potential reasons. OmniCorp has been affected severely in this area, with many restaurants and hospitality outlets temporarily forced to close due to 'Lockdown' measures. Furthermore, significant changes to consumer shopping behaviour has led to the need to develop new business strategies.  
 COVID-19 is a new contagious virus. Its more extreme symptoms include ‘acute respiratory distress syndrome’ and it has led to a large number of deaths around the world, particularly among the old and vulnerable. One of the reasons COVID-19 has been deemed so dangerous is its ‘incubation period’; a person can be infected for 48-72 hours before experiencing symptoms, allowing the virus to spread significantly before an individual realises they have it. A high percentage of cases are also asymptomatic, leading to further spreading. To prevent this spread, governments across the world have been forced to respond with strict 'lockdown' measures and other forms of interventions.  
 A recent project by OxCGRT (Hale et al., 2020) has quantified global government restrictions in the form of a stringency index. This index is calculated as a value of 1 to 100, aggregated from 9 different indicators, and reflects the level of intensity in the governments containment and closure policies, alongside the intensity of public health information campaigns. The higher the stringency index, the stricter the physical measures the government has put in place. Below are graphs showing the changing intensity of government measures in each of the three continents in which OmniCorp operates.  
+
 ```{r chunkintroduction, echo= FALSE, message = FALSE, warning = FALSE, fig.height=2.7, fig.align='center'}
 StringencyData = StrIdxData
 colnames(StringencyData) <- c("country", "lettercode", "Date", "strength") 
@@ -147,6 +148,7 @@ Each continent’s government restrictions peaked in May and have slowly descend
 Throughout this report, many references to these graphs are made to compare changing government restrictions with the population’s activity in retail and hospitality sectors. It should be noted that it is incredibly hard to quantify policies, as there are not clearly defined stages of intensity. The given dataset and indexes do not tell the complete picture, but are an excellent guide to approximate intensity.   
 
 # 2. Case Analysis  
+
 ```{r chunkdailycases, echo=FALSE, comments= FALSE, message = FALSE, warning= FALSE}
 RawTidyCovidData <- RawTidyCovidData %>%
   mutate(date = as.Date(parse_date_time(RawTidyCovidData$date,orders=c("y","ym","ymd")))) 
@@ -176,9 +178,6 @@ local_r <- function(cases, window_width) {
   })
   return(c(rep(local_r[1],window_width/2),local_r,rep(local_r[length(local_r)],window_width/2)))
 }
-
-window_width = 14 # local regression over a two week window
-
 
 DailyCasesEU <- DailyCases %>%
   filter(continent == 'Europe') %>%
@@ -232,6 +231,8 @@ South America has not followed the similar ‘wave’ pattern seen in Europe and
 However, cases are usually only reported after a confirmed positive test, and in the early days of the pandemic many country’s testing infrastructure was limited, suggesting cases may have been left unreported. Consequently, ‘first waves’ are likely to be grossly underestimated in real terms in the graph.  
  
 ```{r chunkdailyR, echo=FALSE, comments= FALSE, message = FALSE, warning= FALSE}
+
+window_width = 14 # local regression over a two week window
 DailyCasesEU2 <- DailyCases %>%
   filter(daily_confirmed > 0) %>%
   filter(continent == 'Europe') %>%
@@ -274,9 +275,11 @@ where $r = {log(R)}/{T_c}$ is the rate of exponential growth of infections. We c
 $$
 log[{I(t)}] = log[{I(0)}] + {r}{t}
 $$  
+
 ## Deploying the model  
 We can construct a locally linear negative binomial model for a 14 day window surrounding the chosen date using the format described above. From this, we can calculate the local R rate from our model at that time, providing us with useful information about the dynamics of the epidemic. Under the simplest model, if $R > 1$ the number of infections will grow exponentially in time, whereas if $R < 1$ then the number of infections will decrease exponentially in time.  
-This model has been fitted to the cases data displayed above and modelled by continent. The local R value is then extracted at that date, by $R = exp({r}{T_{c}})$ with $r$ and $T_{c}$ defined as above. The local R values have also only been calculated upon a continent hitting 100 cases, as for values below this, models can become easily distorted and we gain little extra information from this data. The black line also indicates the crucial value of $R = 1$ so we can visualise the local R value with respect to this more easily.  
+This model has been fitted to the cases data displayed above and modelled by continent. The local R value is then extracted at that date, by $R = exp({r}{T_{c}})$ with $r$ and $T_{c}$ defined as above. The local R values have also only been calculated upon a continent hitting 100 cases, as for values below this, models can become easily distorted and we gain little extra information from this data. The black line also indicates the crucial value of $R = 1$ so we can visualise the local R value with respect to this more easily.
+
 ```{r chunkRplot, echo=FALSE, comments= FALSE, message = FALSE, warning= FALSE,  fig.width=4.9, fig.asp= 0.618, fig.align='center'}
 DailyR %>% ggplot(aes(x = date,
                                 y = local_R, col = continent)) +
@@ -291,10 +294,10 @@ DailyR %>% ggplot(aes(x = date,
   theme(legend.position = 'bottom') +
   labs(col='Continent') 
 ```
-
 The graph shows that the R rate has fallen substantially in every continent since the early days of the pandemic. This is likely due to the implementation of strong government interventions forcing the virus to contract. Both South and North America witnessed the steepest fall in their R rate as opposed to Europe’s rate which took slightly longer to fall. However, it is worth noting that while South America’s rate fell below 1.5 very quickly, it didn’t fall below 1 for the first time until 9th June compared to 31st March and 8th April for Europe and North America respectively. This failure to get the rate below 1 quickly enough is likely the cause of their apparent ‘singular wave’ compared to the other two continents mentioned.  
 We also saw earlier that Europe and North America eased off government intervention following May/June. It is clear to see the impact of this; the R rates crept up slowly above 1, leading to the aforementioned ‘second wave’ in both continents. While North America managed to moderately control their rate in mid July, Europe’s R rate has only dipped below 1 once since 3rd July, leading to an increase in government restrictions again which have their own implications on people, businesses and the wider economy.  
 While this model is useful to observe a general trend, it does have its limitations. Most notably it relies on a constant value of $T_c$, but an infected individual is unlikely to pass on the virus at one specific time. Also, the value of $T_c = {4}$ is only from early studies and has yet to be confirmed. Additionally, cases are only reported once a positive test has been confirmed. During early days of the pandemic, many country’s testing infrastructure was limited resulting in cases left unreported.  
+
 # 3. Changes in behaviour
 ```{r chunkstringency, echo=FALSE}
 RawTidyCovidData<-as_tibble(RawTidyCovidData)
@@ -334,6 +337,7 @@ CountryFactors<-TidyDataAllVariables[,c(1,2,27:32,34)]
 Since OmniCorp has stakes in the retail and hospitality sector, it’s useful to analyse the impact of government intervention on people’s behaviour within those sectors, so as to identify opportunities and threats.  
 The graphs below examine the changes in activity of people in Europe and America during ‘lockdown’, and compares them to strength of government measures. The first graph (above) uses the Google Community Mobility Reports data collated in the tidycovid19 data set (Gassen, 2020). It shows the activity level in different types of areas (recreational, residential etc.) compared to a baseline, as a line of best fit calculated for countries in Europe, North America and South America.  
 The second graph shows the changing ‘Stringency Index’ (Hale et al., 2020) over time. The black line is a line of best fit calculated for all countries in Europe and America, showing the changing stringency in overall government response over time. Additionally, the coloured lines show the changes in stringency index for 7 major countries where OmniCorp operate.
+
 ```{r chunkactivityplots, echo=FALSE, warning=FALSE, message=FALSE,  fig.height = 4, fig.align='center'}
 
 EuropeCountrySelection <- c("United Kingdom", "Spain", "Italy", "France", "Russia")
@@ -359,7 +363,6 @@ gcmractivies_date <- SubDataSelection %>% ggplot(mapping = aes(colour = country)
   theme_light() +
   theme(plot.caption = element_text(hjust = 0.3))
 
-
 # Plot of Stringency Index Over Time
 Stringency_Date_plot <- ggplot() +
     geom_line(data = filter(StringencyData, Entity %in% CountrySelection), mapping = aes(x = date, y= stringency_index, group = Entity, color = Entity)) +
@@ -372,16 +375,16 @@ Stringency_Date_plot <- ggplot() +
 
 ggarrange(gcmractivies_date, Stringency_Date_plot, 
           ncol = 1, nrow = 2, align = "v")
-
-
 ```
 The graphs show that during the initial stages of ‘Lockdown’(highlighted in red), increased strength in government response led to people spending more time in residential areas (at home) than in public areas. Retail, recreational and transport activity were most affected by ‘lockdown’ measures, whereas activity in parks, grocery and pharmaceutical stores were less affected. This could be due to the less severe  ‘lockdown’ measures implemented at parks and grocery/pharmaceutical stores, with the latter being considered necessary, and the former less dangerous for the spreading of COVID-19 with their larger, outdoor, open spaces (Healey, 2020).  
  It is interesting to consider when the lines of best fit peak. The line of best fit for stringency index is at its maximum is on the 21st of April whereas the greatest decrease in activity level for parks, retail and recreational places, transit stations and work places is at the beginning of April. This suggests that the changing activity levels don’t directly relate to the strength in government response, that people are making decisions about where they visit, not only based on government restrictions.  
 Perhaps after the initial shock of the spreading pandemic, people became more assured of the safety measures implemented, and so had more confidence to visit public places, or instead became frustrated by staying home.  
 Alternatively, their changing views about the severity of the pandemic could have led them to deviate from imposed government restrictions; People over time were made aware of the lower death rate and those less affected by the disease, becoming less concerned about the effect the virus could have on them. In the U.K., people’s changing view of the dangers of COVID-19 is shown in a report by Thomas Collins and Anand Pillai (2020).   
 If more data was collated about the ages of people taking part in each activity, we could learn more about the reasons for the disconnection between ‘Lockdown’ strength and changing activity levels. Since the pandemic affects younger people less than older people, it’s possible they were the ones visiting public places in spite of the restrictions. Since the data was collected through Google Mobile Reports, there is likely to be a bias towards a younger age group; The graphs aren’t perfectly reflective of society as a whole since older people are less likely to own a smart phone and be included in the data.  
+
 ## The Effect of Income on Imposed Government Restrictions  
 The following looks at the direct relationship between Stringency Index (Hale at al., 2020) and Recreational/Retail activity, and how that differs between countries with different GDPs per capita. The data for GDP per capita is from Gapminder (2020), measured in 2018 in US-\$ as reported by the world bank. The values for recreational/retail activity shown are averages calculated for the same country and Stringency index.   
+
 ```{r chunkactivityplot2, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
 # aggregating, calculating average retail/rec activity for  the same date and Stringency index 
 avg_rec_activity<-aggregate(Stringency_Activity_Data["gcmr_retail_recreation"], by = Stringency_Activity_Data[c("iso3c","stringency_index")],FUN = function(z) mean(z, na.rm = TRUE))
@@ -413,7 +416,6 @@ Furthermore, at higher income levels, the stringency index has a greater effect 
 It is not clear from the above whether the difference in response to government restrictions is due to a specific individuals wealth, or the overall wealth of a country. To determine this more conclusively, an analysis could be performed with specific areas within countries. The GDP per capita for specific cities for example is likely to be more reflective of an individual’s wealth within that city than the overall GDP per capita of a country. Given more data and time, a regression model could be constructed, to try and obtain an actual value for the influence of GDP on Retail and Recreation Activity.  
 
 # 4. Changing Commercial Behaviours   
-
 ```{r chunkpurchases, echo=FALSE, message=FALSE, warning=FALSE}
 Internet <- Trade1 %>% 
   dplyr::select(TIME, GEO, NACE_R2, Value)
@@ -472,6 +474,7 @@ These conclusions assume that the sample of trade record is representative of th
 ## Effects on Corporations   
 The 2020 pandemic affected all types of businesses. The following section reviews the share prices of different companies to see what effect the government lockdown measures had on them using data obtained from Yahoo Finance (2020) between 1/12/2019-25/11/2020. The stringency index (Hale et al., 2020) is used to compare how different stocks and shares performed during the pandemic and the effect, if any, on their price.   
 Below, the largest stock markets from North America, South America and Europe are compared (Euronext isn’t used since it can’t be compared to the stringency index of a single country so instead the FTSE100 is used as a measure for Europe). The stringency index is split into two different sections: Low - an index score of 0-50; and High - an index score of 50-100. This can be done since there is little data for values between 30-70, due to governments generally putting multiple lockdown measures in to place at the same time causing jumps in the index. Splitting it up like this will also make it easier to see the general trends of each market.   
+
 ```{r chunkstockdata, fig.width=5, fig.asp= 0.618, fig.align='center'}
 str <-StrIdxData
 NYSE$Date <- as.Date(NYSE$Date,"%Y-%m-%d")
@@ -519,8 +522,6 @@ ggplot(data = lottahelp2, aes(x=company, y=Open,
   scale_color_manual(labels = c("Low", "High"), values = c("blue", "red")) + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), legend.position = 'bottom', axis.title.y = element_text(hjust = 0.8))
-
-
 ```  
 The data shows a clear correlation between stronger lockdown measures and lower stock prices. This is likely due to people being uncertain about the future of the markets as no one knew how the lockdown measures announced would affect different companies.   
 Stock markets depend on many different factors and so any decline in price may not be a direct cause of the lockdown measures. With further investigation we could add different variables to try and distinguish between whether there was causation or just correlation.  
